@@ -7,3 +7,9 @@ I wrote this because I didn't want to manually extract and/or delete 100's of fi
 As an added bonus, it can rename files to DOS 8.3 format if you wish to run these on Vintage hardware or a DOS VM.
 
 Feel free to contributes feature requests / patches as the base is now in place.
+
+## Screenshots
+
+![Main](./Screenshots/Main.png?raw=true)
+
+![Suggest](./Screenshots/Suggest.png?raw=true)
