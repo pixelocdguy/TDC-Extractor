@@ -11,5 +11,3 @@ Feel free to contributes feature requests / patches as the base is now in place.
 ## Screenshots
 
 ![Main](./Screenshots/Main.png?raw=true)
-
-![Suggest](./Screenshots/Suggest.png?raw=true)
