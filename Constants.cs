@@ -8,6 +8,8 @@ namespace TDC_Extractor
 {
     public static class Constants
     {
+        public const string ZIP = ".ZIP";
+
         // These are names of exucible files that we don't want to allow as a suggested name
         // As they are clearly not the name of the game...
         public static readonly List<string> EXCLUDED_NAMES = new List<string>
@@ -23,6 +25,8 @@ namespace TDC_Extractor
             "pkun",
             "autoexec",
             "readme",
+            "note",
+            "file",
             "menu",
             "cga",
             "ega",
@@ -42,16 +46,24 @@ namespace TDC_Extractor
             "date",
             "boot",
             "backup",
+            "1",
+            "2",
+            "3",
+            "I",
+            "II",
+            "III",
             "unstal"
         };
 
         // These are linking words or numbers we do not want to appear as a suggestion in of themselves...
         public static readonly string[] LINKING_WORDS = { "and", "the", "of", "in", "to", "at", "I", "II", "III", "II-", "III-", "I-", "1", "2", "3" };
 
-        // These are puncation characters that are not wanted in the short name (8 chars) naming convention
-        //Replace(".", "").Replace("'", "").Replace(" ", "").Replace(",", "").Replace("-", "").Replace("#", "").Replace("!", "");
+        // These are puncation characters that are not wanted in the short name (8 chars) naming convention        
         public static readonly char[] PUNCTUATION = { '&', ' ', '_', '?', '.', '\'', ',', '-', '#', '$', '!', '[', ']', '(', ')' };
 
+        // A list of all languages other than English.
+        // The reason for this is, the vast majority of Games in TDC are in English (especially in earlier years).
+        // So, it makes sense to have these grouped together for filtering purposes.
         public static readonly List<string> NON_ENGLISH = new List<string>
         {
             "Ab",

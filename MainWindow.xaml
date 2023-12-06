@@ -4,137 +4,195 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:TDC_Extractor"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="768" Width="1366">
+
     <Grid Margin="16">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="16"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="16"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+        
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.RowSpan="3">
-            <Button Content="Open..." Click="OpenButton_Click" Width="96" HorizontalAlignment="Left"/>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Zip File: " FontWeight="Bold"/>
-                <TextBlock x:Name="ZipFileNameTextBlock"/>
+            <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal">
+                <Button Content="Open..." Click="OpenButton_Click" Width="96" HorizontalAlignment="Left"/>            
+                <TextBlock Margin="24,2,0,0" Text="Zip File: " FontWeight="Bold"/>
+                <TextBlock Margin="0,2,0,0" x:Name="ZipFileNameTextBlock" Text="None"/>
             </StackPanel>
+        </Grid>
 
-            <Separator Margin="0,4,0,4" />
-
-            <CheckBox x:Name="ImagesCheckBox" IsChecked="True" Content="Disk Images" Click="CheckBox_Click"/>
-
-            <Separator Margin="0,4,0,4" />
-
-            <TextBlock Text="Tags" FontWeight="Bold"/>
-            <CheckBox x:Name="DCCheckBox" IsChecked="True" Content="[DC] DOS Conversion" Click="CheckBox_Click"/>
-            <CheckBox x:Name="HnCheckBox" IsChecked="True" Content="[h1, h2, ...] Hacked version 1, 2, etc" Click="CheckBox_Click"/>
-            <CheckBox x:Name="AnCheckBox" IsChecked="True" Content="[a1, a2, ...] Alternate version 1, 2, etc" Click="CheckBox_Click"/>
-            <CheckBox x:Name="FnCheckBox" IsChecked="True" Content="[f1, f2, ...] Fixed version 1, 2, etc" Click="CheckBox_Click"/>
-            <CheckBox x:Name="OnCheckBox" IsChecked="True" Content="[o1, o2, ...] Overdump version 1, 2, etc" Click="CheckBox_Click"/>
-            <CheckBox x:Name="BnCheckBox" IsChecked="True" Content="[b1, b2, ...] Bad version 1, 2, etc" Click="CheckBox_Click"/>
-            <CheckBox x:Name="SWCheckBox" IsChecked="True" Content="[SW] Shareware" Click="CheckBox_Click"/>
-            <CheckBox x:Name="SWRFWCheckBox" IsChecked="True" Content="[SWR] Registered Shareware and [FW] Freeware" Click="CheckBox_Click"/>
-            <CheckBox x:Name="GoodCheckBox" IsChecked="True" Content="[!] Known good dump" Click="CheckBox_Click"/>
-            <CheckBox x:Name="MostlyGoodCheckBox" IsChecked="True" Content="[.] Mostly good dump." Click="CheckBox_Click"/>
-            <CheckBox x:Name="TrCheckBox" IsChecked="True" Content="[tr xx] Translated into non-English language" Click="CheckBox_Click"/>
-            <CheckBox x:Name="TrXXCheckBox" IsChecked="False" Content="[tr xx] Translated into other language" Click="CheckBox_Click"/>
-            <TextBox x:Name="OtherTrLanguageTextBox" Text="Uk" Width="128" IsEnabled="{Binding IsChecked, ElementName=TrXXCheckBox}"/>
-
-            <Separator Margin="0,4,0,4" />
-
-            <CheckBox x:Name="VersionCheckBox" IsChecked="False" Content="Version" FontWeight="Bold" Click="CheckBox_Click"/>
-            <RadioButton x:Name="HighestRadioButton" GroupName="Version" IsChecked="True" Content="Highest" IsEnabled="{Binding IsChecked, ElementName=VersionCheckBox}" Click="CheckBox_Click"/>
-            <StackPanel Orientation="Horizontal">
-                <RadioButton x:Name="SpecifiedRadioButton" GroupName="Version" IsChecked="False" Content="Specified" IsEnabled="{Binding IsChecked, ElementName=VersionCheckBox}" Click="CheckBox_Click"/>
-                <TextBox x:Name="VersionTextBox" Text="v1.1" Width="128" IsEnabled="{Binding IsChecked, ElementName=SpecifiedRadioButton}"/>
+        <Grid Grid.Row="1" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>                
+            </Grid.ColumnDefinitions>
+            <!--<StackPanel Orientation="Horizontal">
+                <CheckBox x:Name="FreeTextCheckBox" FontWeight="Bold" IsChecked="False" Content="Search: " Click="CheckBox_Click"/>-->
+                
+            <!--</StackPanel>-->
+            <StackPanel Grid.Column="0">
+                <StackPanel x:Name="TagsStackPanel" Orientation="Vertical" Visibility="Visible">
+                    <TextBlock Text="Tags" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <CheckBox x:Name="DCCheckBox" IsChecked="True" Content="[DC] DOS Conversion" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="HnCheckBox" IsChecked="True" Content="[h1, h2, ...] Hacked version 1, 2, etc" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="AnCheckBox" IsChecked="True" Content="[a1, a2, ...] Alternate version 1, 2, etc" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="FnCheckBox" IsChecked="True" Content="[f1, f2, ...] Fixed version 1, 2, etc" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="OnCheckBox" IsChecked="True" Content="[o1, o2, ...] Overdump version 1, 2, etc" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="BnCheckBox" IsChecked="True" Content="[b1, b2, ...] Bad version 1, 2, etc" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="SWCheckBox" IsChecked="True" Content="[SW] Shareware" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="SWRFWCheckBox" IsChecked="True" Content="[SWR] Registered Shareware and [FW] Freeware" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="GoodCheckBox" IsChecked="True" Content="[!] Known good dump" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="MostlyGoodCheckBox" IsChecked="True" Content="[.] Mostly good dump." Click="CheckBox_Click"/>
+                </StackPanel>
             </StackPanel>
+            <StackPanel Grid.Column="1">
+                <!--<StackPanel Orientation="Horizontal">
+                    
+                    <Button Content="V" Click="Button_Click"/>
+                </StackPanel>-->
+                <StackPanel x:Name="FlagsStackPanel" Orientation="Vertical" Visibility="Visible">
+                    <TextBlock Text="Flags" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <CheckBox x:Name="ImagesCheckBox" IsChecked="True" Content="Disk Images" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="InstallerCheckBox" IsChecked="True" Content="Installer" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="DemoCheckBox" IsChecked="True" Content="Demo" Click="CheckBox_Click"/>
+                    <TextBlock Text="Flags - Graphics Modes" FontWeight="Bold"/>
+                    <CheckBox x:Name="CGACheckBox" IsChecked="True" Content="CGA" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="PCjrCheckBox" IsChecked="True" Content="PCjr" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="TandyCheckBox" IsChecked="True" Content="Tandy" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="EGACheckBox" IsChecked="True" Content="EGA" Click="CheckBox_Click"/>
+                    <CheckBox x:Name="VGACheckBox" IsChecked="True" Content="VGA" Click="CheckBox_Click"/>
 
-            <Separator Margin="0,4,0,4" />
-
-            <TextBlock Text="Flags" FontWeight="Bold"/>
-            <CheckBox x:Name="InstallerCheckBox" IsChecked="True" Content="Installer" Click="CheckBox_Click"/>
-            <CheckBox x:Name="DemoCheckBox" IsChecked="True" Content="Demo" Click="CheckBox_Click"/>
-            <TextBlock Text="Flags - Graphics Modes" FontWeight="Bold"/>
-            <CheckBox x:Name="CGACheckBox" IsChecked="True" Content="CGA" Click="CheckBox_Click"/>
-            <CheckBox x:Name="PCjrCheckBox" IsChecked="True" Content="PCjr" Click="CheckBox_Click"/>
-            <CheckBox x:Name="TandyCheckBox" IsChecked="True" Content="Tandy" Click="CheckBox_Click"/>
-            <CheckBox x:Name="EGACheckBox" IsChecked="True" Content="EGA" Click="CheckBox_Click"/>
-            <CheckBox x:Name="VGACheckBox" IsChecked="True" Content="VGA" Click="CheckBox_Click"/>
-
-            <StackPanel Orientation="Horizontal">
-                <CheckBox x:Name="CustomFlagCheckBox" IsChecked="False" Content="Custom Flag" Click="CheckBox_Click"/>
-                <TextBox x:Name="CustomFlagTextBox" Text="Enhanced" Width="128" IsEnabled="{Binding IsChecked, ElementName=CustomFlagCheckBox}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="CustomFlagCheckBox" IsChecked="False" Content="Custom Flag: " Click="CheckBox_Click"/>
+                        <TextBox x:Name="CustomFlagTextBox" Text="Enhanced" Width="128" IsEnabled="{Binding IsChecked, ElementName=CustomFlagCheckBox}" KeyUp="TextBox_KeyUp" />
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
+            <StackPanel Grid.Column="2">
+                <!--<StackPanel Orientation="Horizontal">
+                    
+                    <Button Content="V" Click="Button_Click"/>
+                </StackPanel>-->
+                <StackPanel x:Name="OtherStackPanel" Orientation="Vertical" Visibility="Visible">
+                    <TextBlock Text="Languages / more..." FontWeight="Bold" Margin="0,0,0,4"/>
+                    <CheckBox x:Name="TrCheckBox" IsChecked="True" Content="[tr xx] INCLUDE Translated into non-English language" Click="CheckBox_Click"/>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="TrXXCheckBox" IsChecked="False" Content="[tr xx] ONLY Translated into other language" Click="CheckBox_Click"/>
+                        <TextBox x:Name="OtherTrLanguageTextBox" Text="Es" Width="128" IsEnabled="{Binding IsChecked, ElementName=TrXXCheckBox}"/>
+                    </StackPanel>
+                    <CheckBox x:Name="NonEnglishCheckBox" IsChecked="True" Content="INCLUDE Non English" Click="CheckBox_Click"/>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="OtherLanguageCheckBox" IsChecked="False" Content="ONLY Other Language:" Click="CheckBox_Click"/>
+                        <TextBox x:Name="OtherLanguageTextBox" Text="Es" Width="128" IsEnabled="{Binding IsChecked, ElementName=OtherLanguageCheckBox}" KeyUp="TextBox_KeyUp" />
+                    </StackPanel>
 
-            <Separator Margin="0,4,0,4" />
+                    <Separator Margin="0,4,0,4" />
 
-            <TextBlock Text="Languages" FontWeight="Bold"/>
-            <CheckBox x:Name="NonEnglishCheckBox" IsChecked="True" Content="Non English" Click="CheckBox_Click"/>
-            <CheckBox x:Name="OtherLanguageCheckBox" IsChecked="False" Content="Other Language:" Click="CheckBox_Click"/>
-            <TextBox x:Name="OtherLanguageTextBox" Text="Uk" Width="128" IsEnabled="{Binding IsChecked, ElementName=OtherLanguageCheckBox}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="PublisherCheckBox" IsChecked="False" Content="Publisher: " FontWeight="Bold" Click="CheckBox_Click"/>
+                        <TextBox Width="256" x:Name="PublisherTextBox" Text="Sierra" IsEnabled="{Binding IsChecked, ElementName=PublisherCheckBox}" KeyUp="TextBox_KeyUp" />
+                    </StackPanel>
 
-            <Separator Margin="0,4,0,4" />
+                    <Separator Margin="0,4,0,4" />
 
-            <StackPanel Orientation="Horizontal">
-                <CheckBox x:Name="PublisherCheckBox" IsChecked="False" Content="Publisher: " FontWeight="Bold" Click="CheckBox_Click"/>
-                <TextBox Width="256" x:Name="PublisherTextBox" Text="Sierra" IsEnabled="{Binding IsChecked, ElementName=PublisherCheckBox}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="GenreCheckBox" IsChecked="False" Content="Genre: " FontWeight="Bold" Click="CheckBox_Click"/>
+                        <TextBox Width="256" x:Name="GenreTextBox" Text="RPG" IsEnabled="{Binding IsChecked, ElementName=GenreCheckBox}" KeyUp="TextBox_KeyUp" />
+                    </StackPanel>
+
+                    <Separator Margin="0,4,0,4" />
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="VersionCheckBox" IsChecked="False" Content="Version" FontWeight="Bold" Click="CheckBox_Click"/>
+                        <RadioButton Margin="12,0,0,0" x:Name="HighestRadioButton" GroupName="Version" IsChecked="True" Content="Highest" IsEnabled="{Binding IsChecked, ElementName=VersionCheckBox}" Click="CheckBox_Click"/>
+                        <RadioButton Margin="12,0,0,0" x:Name="SpecifiedRadioButton" GroupName="Version" IsChecked="False" Content="Specified" IsEnabled="{Binding IsChecked, ElementName=VersionCheckBox}" Click="CheckBox_Click"/>
+                        <TextBox Margin="12,0,0,0" x:Name="VersionTextBox" Text="v1.1" Width="128" IsEnabled="{Binding IsChecked, ElementName=SpecifiedRadioButton}" KeyUp="TextBox_KeyUp" />
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
+        </Grid>
 
-            <Separator Margin="0,4,0,4" />
-
-            <StackPanel Orientation="Horizontal">
-                <CheckBox x:Name="GenreCheckBox" IsChecked="False" Content="Genre: " FontWeight="Bold" Click="CheckBox_Click"/>
-                <TextBox Width="256" x:Name="GenreTextBox" Text="RPG" IsEnabled="{Binding IsChecked, ElementName=GenreCheckBox}"/>
-            </StackPanel>
-
-            <Separator Margin="0,4,0,4" />
-            <CheckBox x:Name="FreeTextCheckBox" IsChecked="False" Content="Match given free text: " Click="CheckBox_Click"/>
-            <TextBox x:Name="FreeTextTextBox" Text="" Width="128" IsEnabled="{Binding IsChecked, ElementName=FreeTextCheckBox}"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Center">
+            <TextBlock Text="Search: "  Margin="0,0,4,0" FontWeight="Bold"/>
+            <TextBox x:Name="SearchTextBox" Width="512"  IsEnabled="{Binding IsChecked, ElementName=FreeTextCheckBox}" KeyUp="TextBox_KeyUp" />
         </StackPanel>
 
-        <TextBlock Grid.Column="4" Text="Selected Games" FontWeight="Bold"/>
+        <DataGrid Grid.Row="3"  Margin="0,12,0,0" x:Name="GamesDataGrid" SelectionUnit="Cell" ItemsSource="{Binding}" Grid.Column="2" HorizontalScrollBarVisibility="Disabled" AutoGenerateColumns="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Selected}" Value="True">
+                            <Setter Property="Foreground" Value="ForestGreen" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Selected}" Value="False">
+                            <Setter Property="Foreground" Value="Red" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Width="Auto" Header="Selected" Binding="{Binding Selected, Mode=TwoWay}">
+                    <DataGridCheckBoxColumn.ElementStyle>
+                        <Style TargetType="CheckBox">
+                            <EventSetter Event="Checked" Handler="SelectedCheckBox_CheckedChanged" />
+                            <EventSetter Event="Unchecked" Handler="SelectedCheckBox_CheckedChanged" />
+                        </Style>
+                    </DataGridCheckBoxColumn.ElementStyle>
+                </DataGridCheckBoxColumn>
+                <DataGridTextColumn Width="Auto" Header="Full Name" IsReadOnly="True" Binding="{Binding FullName}"/>
+                <DataGridTextColumn Width="Auto" Header="Current Name"  Binding="{Binding CurrentName, Mode=TwoWay}"/>
+                <DataGridComboBoxColumn Width="Auto" x:Name="SuggestedNamesColumn" Header="Suggested Names"  Visibility="Collapsed"
+                                        SelectedItemBinding="{Binding CurrentName}">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="ComboBox">
+                            <Setter Property="ItemsSource" Value="{Binding SuggestedNames}" />
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="ComboBox">
+                            <Setter Property="ItemsSource" Value="{Binding SuggestedNames}" />
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+            </DataGrid.Columns>
+        </DataGrid>
 
-        <ListBox Grid.Column="4" Grid.Row="1" x:Name="GameZipFilesListBox" DisplayMemberPath="DisplayName" PreviewMouseMove="ListBox_PreviewMouseMove" PreviewMouseLeftButtonDown="ListBox_PreviewMouseLeftButtonDown" 
-                 Drop="ListBox_Drop" AllowDrop="True"/>        
-
-        <StackPanel Grid.Column="4" Grid.Row="2">
+        <Grid Grid.Row="4" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Number: " FontWeight="Bold"/>
-                <TextBlock x:Name="NumberTextBlock" Text="0"/>
+                <TextBlock Text="Selected: " FontWeight="Bold"/>
+                <TextBlock x:Name="SelectedTextBlock" Text="0"/>
             </StackPanel>
 
-            <Separator Margin="0,4,0,4" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="Options: " FontWeight="Bold"/>
+                <CheckBox Margin="8,0,0,0" x:Name="ShortNameCheckBox" IsChecked="False" Content="8.3 Format" Click="ShortNameCheckBox_Click" />
+                <RadioButton Margin="8,0,0,0" x:Name="TruncateRadioButton" Content="Truncate" IsChecked="True" IsEnabled="{Binding IsChecked, ElementName=ShortNameCheckBox}" Click="ShortNameCheckBox_Click"/>
+                <RadioButton Margin="4,0,0,0" x:Name="SuggestRadioButton" Content="Suggest" IsChecked="False" IsEnabled="{Binding IsChecked, ElementName=ShortNameCheckBox}" Click="ShortNameCheckBox_Click"/>
+                <TextBlock Margin="8,0,8,0" Text="|"/>
+                <CheckBox x:Name="AlphabetCheckBox" Content="Alphabet sub-folders" IsChecked="True"/>
+                <!--<CheckBox Margin="4,0,0,0"  x:Name="PublisherFolderCheckBox" Content="Publisher sub-folders" IsChecked="False"/>-->                                
+                <TextBlock Margin="8,0,8,0" Text="|"/>
+                <!--<CheckBox Margin="4,0,0,0" x:Name="GroupCheckBox" Content="Group Varients" IsChecked="False"/>
+                <TextBlock Margin="8,0,8,0" Text="|"/>-->
+                <CheckBox x:Name="DeleteZipsCheckBox" Content="Delete inner-zip after game extracted" IsChecked="True"/>
 
-            <TextBlock Text="Options" FontWeight="Bold"/>
-            <CheckBox x:Name="ShortNameCheckBox" IsChecked="False" Content="8.3 Format" Click="ShortNameCheckBox_Click" />
-            <RadioButton x:Name="TruncateRadioButton" Content="Truncate" IsChecked="True" IsEnabled="{Binding IsChecked, ElementName=ShortNameCheckBox}" Click="ShortNameCheckBox_Click"/>
-            <RadioButton x:Name="SuggestRadioButton" Content="Suggest" IsChecked="False" IsEnabled="{Binding IsChecked, ElementName=ShortNameCheckBox}" Click="ShortNameCheckBox_Click"/>
-            <CheckBox x:Name="AlphabetCheckBox" Content="Alphabet sub-folders" IsChecked="True"/>
-            <CheckBox x:Name="DeleteZipsCheckBox" Content="Delete zips" IsChecked="True"/>
-
-            <Separator Margin="0,4,0,4" />
+                <Separator Margin="0,4,0,4" />
             
-            <Button Width="96" x:Name="ExtractButton" Content="Extract..." Click="ExtractButton_Click" HorizontalAlignment="Left"/>
-        </StackPanel>
-
-        <TextBlock Grid.Column="2" Text="Excluded Games" FontWeight="Bold"/>
-
-        <ListBox Grid.Column="2" Grid.Row="1" x:Name="ExcludedZipFilesListBox" DisplayMemberPath="FullName" PreviewMouseMove="ListBox_PreviewMouseMove" PreviewMouseLeftButtonDown="ListBox_PreviewMouseLeftButtonDown" 
-                 Drop="ListBox_Drop" AllowDrop="True"/>            
-
-        <StackPanel Grid.Column="2" Grid.Row="2" Orientation="Horizontal">
-            <TextBlock Text="Number: " FontWeight="Bold"/>
-            <TextBlock x:Name="ExcludedNumberTextBlock" Text="0"/>
-        </StackPanel>
-
+                <Button Margin="8,0,0,0" Width="96" x:Name="ExtractButton" Content="Extract..." Click="ExtractButton_Click" HorizontalAlignment="Left"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

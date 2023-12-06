@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -10,75 +11,92 @@ namespace TDC_Extractor
 {
     // Stores information about a Game
     // Specifically, it's full name, short name (if enabled by user), index in List, index and/or ID?
-    public class Game
+    public class Game : INotifyPropertyChanged
     {
-        // ID is a unqiue ID. This is the position in the original zip file which is useful for other methods also.
-        public int ID { get; set; }
-        public string Filename { get; set; }
+        public event PropertyChangedEventHandler? PropertyChanged;
 
+        // This is the position in the original zip file which is useful for other methods also.
+        public int Index { get; set; }
+        // This is the filename including the extension
+        
+        public string Filename { get; set; }
+        // This is the full name of the game, including metadata
         public string FullName { get; private set; }
-        public string NameWOMeta { get; private set; }
+        // This is the full name of the game, WITHOUT the metadata
+        // public string NameWOMeta { get; private set; }
+        // This is ONLY the game varient meta data
+        // For example, a1, b1, etc.
+        // But not including Year, Publisher, Genre, etc.
+        public string VarientMeta { get; private set; }
+        // Opposite of the above
+        public string? NameWOVarients { get; private set; }
+
+        // As per below comment.
         private string _currentName;
         public string CurrentName
         {
             get { return _currentName; }
             set
             {
-                _currentName = value;
-                if (_currentName != FullName)
+                if (_currentName != value)
                 {
-                    string tab = "\t\t";
-                    if (_currentName.Length > 7)
-                    {
-                        tab = "\t";
-                    }
-
-                    DisplayName = _currentName + tab + FullName;
-                }
-                else
-                {
-                    DisplayName = FullName;
+                    _currentName = value;
+                    OnPropertyChanged(nameof(CurrentName));
                 }
             }
         }
-
-        public string DisplayName { get; set; }
-
-        public string? TruncatedName { get; set; }
-        //private List<string> _suggestedNames;
-        public List<string> SuggestedNames { get; set; }
-        //{
-        //    get { return _suggestedNames; }
-        //    set
-        //    {
-        //        _suggestedNames = value;
-
-        //        if (_suggestedNames != null && _suggestedNames.Count > 0)
-        //        {
-        //            DefaultSuggestedName = _suggestedNames.First();
-        //        }
-        //    }
-        //}
-        //public string DefaultSuggestedName{ get; private set; }
+        // This is  used to store the truncated name when renaming in 8.3 Windows format for extraction.        
+        private string? _truncatedName;
+        public string? TruncatedName
+        {
+            get { return _truncatedName; }
+            set
+            {
+                if (_truncatedName != value)
+                {
+                    _truncatedName = value;
+                    OnPropertyChanged(nameof(CurrentName));
+                }
+            }
+        }
+        // This is  used to store suggested when the user wants something more meaningful than the above.
+        public ObservableCollection<string> SuggestedNames { get; set; }
 
         // True: Game is selected. False: Game is excluded
-        public bool Selected { get; set; }
-        // Null: Game has not been dragged / overriden, so leave as automatic (above). True: Game name has been manually selected. Fales: Game name has been manually excluded.
+        private bool _selected;
+        public bool Selected
+        {
+            get { return _selected; }
+            set
+            {
+                if (_selected != value)
+                {
+                    _selected = value;
+                    OnPropertyChanged(nameof(Selected));
+                }
+            }
+        }
+        // Null: Game has not been manually [de-]selected, so leave as automatic. True: Game name has been manually selected. Fales: Game name has been manually excluded.
         public bool? Manual { get; set; }
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public Game(int id, string filename)
         {
-            ID = id;
+            Index = id;
+            
             Filename = filename;
-            FullName = Path.GetFileNameWithoutExtension(Filename);
+            FullName = Path.GetFileNameWithoutExtension(Filename);            
+            //NameWOMeta = TitleHelpers.GetGameNameWithoutMeta(Filename); // Remove these from constructor and only run when needed?
+            VarientMeta = TitleHelpers.GetVarientMeta(Filename); // Remove these from constructor and only run when needed?
             _currentName = FullName;
-            DisplayName = _currentName;
-            NameWOMeta = Helpers.GetGameNameWithoutMeta(Filename);
 
-            SuggestedNames = new List<string>();
-            //DefaultSuggestedName = "";
+            SuggestedNames = new ObservableCollection<string>();            
 
-            Selected = true;
+            _selected = true;
             Manual = null;
         }
     }

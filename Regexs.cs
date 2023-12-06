@@ -30,9 +30,7 @@ namespace TDC_Extractor
         public const string MOSTLY_GOOD = @"\[\.\]";
         // [tr xx] Translated into any language
         public const string TRANSLATED = @"\[tr\s\w{2}\]";
-        // [tr xx] Translated into other language
-        //public const string OTHER = @"\[tr\sXX\]";
-
+        
         // ***VERSION***
         // Matches v1.x and/or r1, etc
         public const string VERSION = @"[vV]\d+\.?\d+[a-zA-Z]?|[rR]\d+[a-zA-Z]?";
@@ -58,12 +56,7 @@ namespace TDC_Extractor
         // ***LANGUAGES***
         // English
         public const string ENGLISH = @"\(En\)";
-        // Japenese
-        //public const string JAPANESE = @"\(Jp\)";
-        // TO DO: Other...
-        // BUG: Matches too many other things!
-        //public const string OTHER = @"\[\w{2}\]";
-
+        
         // ***PUBLISHER***
         // Matches publisher within round brackets
         public const string PUBLISHER = @"\([a-zA-Z\s\-\,\.]*(?i)publisher[a-zA-Z\s\-\,\.]*(?-i)\)";
@@ -75,9 +68,19 @@ namespace TDC_Extractor
         // ***OTHER***
         // These are punctuation chars we do not want in the final game title IF it is shortened, either by truncation or suggestion
         public const string EXCLUDED_SYMBOLS = @"[\s_\-'.?!#&()\[\]$,]";
+        
         // Game title with no meta data
         public const string NAME_W_O_META = @"^[^[\]()]*?(?=\s*(?:\[|\(|v\d+(?:\.\d+)*|r\d+))";
+        
         // Regex to match the trucated number at the end of a game name
         public const string TRUNCATED_NUMBER = @"~(\d+)$";
+
+        // Regex to match any meta data
+        // This includes: Version, Flags, Languages, Tags
+        public const string VARIENT_META = @"(v[0-9.]+|r\d+)|(\([^\)]*\))|(\[[^\]]*\])|(\[\.\])|(\[\!\])";
+        // Regex to remove brackets and . (dot) from above metadata match
+        public const string SHORT_META = @"[\[\]\(\)]|\.0+";
+
+        public const string YEAR = @"\((198\d|199\d|20[0-9]\d)\)";
     }
 }

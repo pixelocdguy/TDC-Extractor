@@ -11,7 +11,7 @@ using System.Windows;
 
 namespace TDC_Extractor
 {
-    public static class Helpers
+    public static class TitleHelpers
     {
         /*
          * Gets a Version object from a Game Title
@@ -33,12 +33,15 @@ namespace TDC_Extractor
             {
                 versionString = versionString.Replace('r', 'v') + ".0";
             }
-            else if (Char.IsLetter(versionString.Last()))
+            else if (Char.IsLetter(versionString.Last())) // Converts a trailing letter to a build no for comparison purposes
             {
                 int buildNo = Char.ToUpper(versionString.Last()) - 64;
 
                 versionString = versionString.Replace(versionString.Last().ToString(), "." + buildNo.ToString());
             }
+            // TO DO: There are a couple of other version types that are slipping through, e.g.
+            // v1.0002.0001
+            // v1.2g
 
             Version version;
 
@@ -75,6 +78,85 @@ namespace TDC_Extractor
             return gameNameNoMeta;
         }
 
+        // Get the Game Varient Metadata, e.g. alternate 3, hack 1, fix 2, etc
+        public static string GetVarientMeta(string gameString)
+        {
+            string varientMeta;
+
+            // Match all fields enclosed in parentheses or square brackets, version information, or optional [!] or [.]
+            MatchCollection matchCollection = Regex.Matches(gameString, Regexs.VARIENT_META);
+
+            // Convert MatchCollection to List
+            List<string> matches = new List<string>();
+            foreach (Match match in matchCollection)
+            {
+                for (int i = 1; i < match.Groups.Count; i++) // Start from 1 to skip the full match
+                {
+                    // Add non-empty matches
+                    if (!string.IsNullOrEmpty(match.Groups[i].Value))
+                    {
+                        matches.Add(match.Groups[i].Value);
+                    }
+                }
+            }
+
+            // Post-processing: drop the last three matches which should be the year, publisher and genre
+            // Also account for optional [!] or [.]
+            if (matches[matches.Count - 1] == "[.]" || matches[matches.Count - 1] == "[!]")
+            {
+                matches.RemoveRange(matches.Count - 4, 4);
+            }
+            else
+            {
+                matches.RemoveRange(matches.Count - 3, 3);
+            }
+
+            StringBuilder builder = new StringBuilder();
+            foreach (string match in matches)
+            {
+                builder.Append(match.Trim());
+            }
+            varientMeta = builder.ToString();
+
+            if (varientMeta.Length <= 0)
+            {
+                varientMeta = "v1.0";
+            }
+
+            return varientMeta;
+        }
+
+        // Get Game Name without Varients
+        public static string GetGameNameWOVarients(string gameString)
+        {
+            string gameNameWOVarients = "";
+
+            int yearIndex = Regex.Match(gameString, Regexs.YEAR).Index;
+            string yearPublisherGenre = gameString.Substring(yearIndex);
+            yearPublisherGenre = yearPublisherGenre.Replace("[!]", "").Replace("[.]", "").TrimEnd();
+
+            gameNameWOVarients = GetGameNameWithoutMeta(gameString) + " " + yearPublisherGenre;
+
+            return gameNameWOVarients;
+        }
+
+
+        // Get Company from Game Name
+        //public static string GetPublisher(Game game, string year)
+        //{
+        //    string gameName = game.FullName;
+        //    string yearW_Brackets = "(" + year + ")";
+
+        //    string publisher;
+
+        //    int startIndex = gameName.IndexOf(yearW_Brackets) + yearW_Brackets.Length + 1;
+        //    int endIndex = gameName.IndexOf(")", startIndex);
+
+        //    publisher = gameName.Substring(startIndex, endIndex - startIndex);
+
+        //    return publisher;
+        //}
+
         /*
          * Gets a Game Title without the version
          * This is used when comparing versions
@@ -102,57 +184,6 @@ namespace TDC_Extractor
             titleOnly = titleOnly.Replace("[!]", "").Replace("[.]", "");
 
             return titleOnly;
-        }
-
-        public static string GetTruncatedName(string gameName, string[] files)
-        {
-            // TO DO: Full 8.3 wierd characters support.
-            // Get just the game title minus metadata
-            // TO DO: Add check for no match
-            gameName = Regex.Match(gameName, Regexs.NAME_W_O_META).Value.Trim();
-            // Replace spaces with underscore's
-            //gameName = gameName.Replace(" ", "_");
-            // Remove spacees
-            //gameName = gameName.Replace(" ", "");
-            // Remove unwanted punctuation / symbols
-            gameName = Regex.Replace(gameName, Regexs.EXCLUDED_SYMBOLS, "");
-            // Convert to upper case
-            gameName = gameName.ToUpper();
-
-            // If game name is greater than 8 chars, truncate now, otherwise, use as is
-            if (gameName.Length > 8)
-            {
-                gameName = gameName.Substring(0, 6) + "~1";
-            }
-            
-            // Check for duplicate name & increment number if found
-            // TO DO: Optimise
-            // BUG: If more than 1 match
-            while (files.Any(file => file.Contains(gameName)))
-            {
-                Match match = Regex.Match(gameName, Regexs.TRUNCATED_NUMBER);
-                string numberAsString;
-                if (match.Success)
-                {
-                    numberAsString = match.Groups[1].Value;
-                }
-                else
-                {
-                    numberAsString = "0";
-                }
-                int i = Int16.Parse(numberAsString);
-
-                if (i > 0)
-                {
-                    gameName = gameName.Replace("~" + i, "~" + (i + 1));                    
-                }
-                else
-                {
-                    gameName = gameName.Substring(0, Math.Min(6, gameName.Length)) + "~1";
-                }
-            }
-
-            return gameName;
         }
     }
 }
