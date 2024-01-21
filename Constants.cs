@@ -10,6 +10,15 @@ namespace TDC_Extractor
     {
         public const string ZIP = ".ZIP";
 
+        public static readonly List<string> EXECUTABLES = new List<string>
+        {
+            ".bat",
+            ".com",
+            ".exe",
+            ".bas",
+            ".img"
+        };
+
         // These are names of exucible files that we don't want to allow as a suggested name
         // As they are clearly not the name of the game...
         public static readonly List<string> EXCLUDED_NAMES = new List<string>
@@ -46,6 +55,7 @@ namespace TDC_Extractor
             "date",
             "boot",
             "backup",
+            "makepath",
             "1",
             "2",
             "3",

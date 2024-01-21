@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Shapes;
 
 namespace TDC_Extractor
 {
@@ -26,7 +28,7 @@ namespace TDC_Extractor
                 {
                     string name = entry.Name;
 
-                    if (Path.GetExtension(name) == Constants.ZIP.ToLower())
+                    if (System.IO.Path.GetExtension(name) == Constants.ZIP.ToLower())
                     {
                         //gameNamesAll.Add(Path.GetFileNameWithoutExtension(name));
                         gameFilenames.Add(name);
@@ -45,35 +47,20 @@ namespace TDC_Extractor
          * Extracts the Inner zip file to the given path (Game Name)
          * CAUTION: Inner zip file must have been extracted already
          */
-        public static void ExtractInnerZip(string innerZipPath, string currentName)
+        public static void ExtractInnerZip(string gameFolder, string gameZip)
         {
-            //string? path = Path.GetDirectoryName(innerZipPath);
-            //if (path == null)
-            //{
-            //    Debug.WriteLine("Unable to get directory name from inner zip path: " + innerZipPath);
-
-            //    return;
-            //}
-            //string gameFolder = currentName;
-
-            // Extract game (inner zip) file
-            //Directory.SetCurrentDirectory(path);
-            //if (!Directory.Exists(innerZipPath))
-            //{
-            //    Directory.CreateDirectory(gameFolder);
-            //}
-
-            string gameFolder = innerZipPath + "\\" + currentName;
+            // The zip file is the same name as the folder + zip extension
+            //string gameZip = new DirectoryInfo(gameFolder).Name + Constants.ZIP;
 
             try
             {
-                using (ZipArchive innerArchive = ZipFile.OpenRead(gameFolder + Constants.ZIP))
+                using (ZipArchive innerArchive = ZipFile.OpenRead(gameFolder + gameZip))
                 {
                     foreach (ZipArchiveEntry gameFile in innerArchive.Entries)
                     {
                         try
                         {
-                            gameFile.ExtractToFile(innerZipPath + "\\" + gameFile.Name);
+                            gameFile.ExtractToFile(gameFolder + "\\" + gameFile.Name);
                         }
                         catch (Exception e3)
                         {
@@ -89,143 +76,32 @@ namespace TDC_Extractor
         }
 
         /*
-         * Deletes all zip files in the given directory
-         * This is for cleanup after inner zip files have been extracted
-         */
-        //public static void DeleteZips(string fullPath)
-        //{
-        //    DirectoryInfo dirInfo = new DirectoryInfo(fullPath);
-
-        //    foreach (FileInfo fileInfo in dirInfo.GetFiles())
-        //    {
-        //        if (fileInfo.Extension == Constants.ZIP)
-        //        {
-        //            fileInfo.Delete();
-        //        }
-        //    }
-        //}
-
-        /*
          * When passed a Zip File Name (including the path and full file name)
          * This will return the full path of extraction         
          */
-        public static string GetFullPath(string zipFileName)
+        public static string GetBasePath(string zipFileName)
         {
             // Get base path. This is will be the same folder that the Yearly Game zip is  in, or TEMP if that fails.
-            string? basePath = Path.GetDirectoryName(zipFileName);
-            if (basePath == null)
-            {
-                basePath = "%TEMP%";
-            }
+            string basePath = System.IO.Path.GetDirectoryName(zipFileName) ?? "%TEMP%";
 
-            // Create Year sub-dir if it doesn't exist already
-            string yearFolder = Path.GetFileNameWithoutExtension(zipFileName);
-           
-            Directory.SetCurrentDirectory(basePath);
-            if (!Directory.Exists(basePath + "\\" + yearFolder))
-            {
-                Directory.CreateDirectory(yearFolder);
-            }
-
-            // Get Full path and return;
-            return basePath + "\\" + yearFolder;
+            return basePath;
         }
 
-        public static string GetTruncatedName(string gameName, string[] files)
-        {            
-            // Get just the game title minus metadata
-            gameName = Regex.Match(gameName, Regexs.NAME_W_O_META).Value.Trim();
-
-            // Remove unwanted punctuation / symbols
-            gameName = Regex.Replace(gameName, Regexs.EXCLUDED_SYMBOLS, "");
-
-            // Convert to upper case
-            gameName = gameName.ToUpper();
-
-            // If game name is greater than 8 chars, truncate now, otherwise, use as is
-            if (gameName.Length > 8)
-            {
-                gameName = gameName.Substring(0, 6) + "~1";
-            }
-
-            // Check for duplicate name & increment number if found
-            while (files.Any(file => file.Contains(gameName)))
-            {
-                Match match = Regex.Match(gameName, Regexs.TRUNCATED_NUMBER);
-                string numberAsString;
-                if (match.Success)
-                {
-                    numberAsString = match.Groups[1].Value;
-                }
-                else
-                {
-                    numberAsString = "0";
-                }
-                int i = Int16.Parse(numberAsString);
-
-                if (i > 0)
-                {
-                    gameName = gameName.Replace("~" + i, "~" + (i + 1));
-                }
-                else
-                {
-                    gameName = gameName.Substring(0, Math.Min(6, gameName.Length)) + "~1";
-                }
-            }
-
-            return gameName;
-        }
-
-        // This is simliar to the GetTruncatedName (game name), only it's for varient meta data sub-folders.
-        // TO DO: Merge with the above?
-        public static string GetTruncatedFolder(string metaFolder, string[] files)
-        {
-            metaFolder = Regex.Replace(metaFolder, Regexs.SHORT_META, "").ToUpper();
-
-            // If game name is greater than 8 chars, truncate now, otherwise, use as is
-            if (metaFolder.Length > 8)
-            {
-                metaFolder = metaFolder.Substring(0, 6) + "~1";
-            }
-
-            // Check for duplicate name & increment number if found
-            while (files.Any(file => file.Contains(metaFolder)))
-            {
-                Match match = Regex.Match(metaFolder, Regexs.TRUNCATED_NUMBER);
-                string numberAsString;
-                if (match.Success)
-                {
-                    numberAsString = match.Groups[1].Value;
-                }
-                else
-                {
-                    numberAsString = "0";
-                }
-                int i = Int16.Parse(numberAsString);
-
-                if (i > 0)
-                {
-                    metaFolder = metaFolder.Replace("~" + i, "~" + (i + 1));
-                }
-                else
-                {
-                    metaFolder = metaFolder.Substring(0, Math.Min(6, metaFolder.Length)) + "~1";
-                }
-            }
-
-            return metaFolder + "\\";
-        }
-
-        public static string GetInnerZipPath(string basePathW_Year, Game game, bool groupSubFolders, bool shortName, bool alphabetSubFolders)
+        /*
+         * NOTE: Directory current path MUST be set to base path for this to work correctly
+         */
+        public static string GetInnerZipPath(string gameFolder, Game game)
         {
             // Start with base dir, minus game name and add as required.
-            string innerZipPath = basePathW_Year + "\\";
+            string innerZipPath = game.Year + "\\";
+
             string alphabet = "";
             //string publisher = "";
-            string gameFolder = game.CurrentName + "\\";
+            //string gameFolder = game.CurrentName + "\\";
+            gameFolder += "\\";
             string metaFolder = "";
 
-            if (alphabetSubFolders)
+            if (game.Alphabet)
             {
                 char alphaNumChar = game.CurrentName.First();
                 if (Char.IsDigit(alphaNumChar))
@@ -247,35 +123,203 @@ namespace TDC_Extractor
             //    innerZipPath += publisher;
             //}
 
-            // TO DO: Remove undo duplicate check somehow?
-            // E.g. Same game (version, year, publisher) but different varient.
-            // Work around for now: User can manually delete ~ if not required.
-            if (groupSubFolders)
+            if (game.Group)
             {
-                if (!shortName)
+                innerZipPath += gameFolder;
+
+                if (!game.ShortName)
                 {
-                    gameFolder = TitleHelpers.GetGameNameWOVarients(game.FullName) + "\\";
-                    innerZipPath += gameFolder;
+                    //if (game.FullName == game.CurrentName)
+                    //{
+                    //    gameFolder = TitleHelpers.GetGameNameWOVarients(game.FullName) + "\\";
+
+                    //    innerZipPath += gameFolder;
+                    //}
+                    //else
+                    //{
+                    //    innerZipPath += gameFolder;
+                    //}                    
 
                     metaFolder = game.VarientMeta + "\\";
                 }
+                // TO DO: Truncated?
                 else
                 {
-                    innerZipPath += gameFolder;
+                    //innerZipPath += gameFolder;
 
-                    // Create the path so far
-                    Directory.CreateDirectory(innerZipPath);
-                    string[] entries = Directory.GetFileSystemEntries(innerZipPath).Distinct().ToArray();
+                    string[] entries;
+                    if (Directory.Exists(innerZipPath))
+                    {
+                        entries = Directory.GetFileSystemEntries(innerZipPath).Distinct().ToArray();
+                    }
+                    else
+                    {
+                        entries = new string[0];
+                    }
 
-                    metaFolder = FileHelpers.GetTruncatedFolder(game.VarientMeta, entries);
+                    metaFolder = GetTruncatedMetaFolder(game.VarientMeta, entries);
                 }
+
+                innerZipPath += metaFolder;
             }
             else
             {
                 innerZipPath += gameFolder;
             }
-            
-            return innerZipPath += metaFolder;
+
+            return innerZipPath;
+        }
+
+        // This is simliar to the GetTruncatedName (game name), only it's for varient meta data sub-folders.        
+        public static string GetTruncatedMetaFolder(string metaFolder, string[] files)
+        {
+            metaFolder = Regex.Replace(metaFolder, Regexs.SHORT_META, "").ToUpper();
+
+            // If game name is greater than 8 chars, truncate now, otherwise, use as is
+            if (metaFolder.Length > 8)
+            {
+                metaFolder = metaFolder.Substring(0, 6) + "~1";
+            }
+
+            // This should be pretty rare, unless the same game is extracted several times with the same base path while grouped.
+            if (files.Length > 0)
+            {
+                // Check for duplicate name & increment number if found
+                while (files.Any(file => file.Contains(metaFolder)))
+                {
+                    Match match = Regex.Match(metaFolder, Regexs.TRUNCATED_NUMBER);
+                    string numberAsString;
+                    if (match.Success)
+                    {
+                        numberAsString = match.Groups[1].Value;
+                    }
+                    else
+                    {
+                        numberAsString = "0";
+                    }
+                    int i = Int16.Parse(numberAsString);
+
+                    if (i > 0)
+                    {
+                        metaFolder = metaFolder.Replace("~" + i, "~" + (i + 1));
+                    }
+                    else
+                    {
+                        metaFolder = metaFolder.Substring(0, Math.Min(6, metaFolder.Length)) + "~1";
+                    }
+                }
+            }
+
+            return metaFolder + "\\";
+        }
+
+        public static string CheckTruncatedNameForFileSystemDuplicates(string basePath, string extractPath, string currentName, string truncatedName)
+        {
+            // Check for duplicate file system name & increment number if found
+            // This should include the full path incase alphabet or grouping is used!
+            //If the yearly extract folder doesn't exist, then there are no file system clashes.
+            string fullPath = basePath + "\\" + extractPath.Replace(currentName, truncatedName);
+            string checkedTruncatedName = truncatedName;
+
+            string[] entries;            
+            if (Directory.Exists(fullPath))
+            {
+                DirectoryInfo directoryInfo = Directory.GetParent(fullPath) ?? new DirectoryInfo(fullPath);
+                DirectoryInfo parentDirectoryInfo = directoryInfo.Parent ?? directoryInfo;
+                string parentFolderPath = parentDirectoryInfo.FullName;
+
+                entries = Directory.GetFileSystemEntries(parentFolderPath).Distinct().ToArray();                
+            }
+            else
+            {
+                entries = new string[0];
+            }
+                        
+            if (entries.Length > 0)
+            {                
+                while (entries.Any(file => file.Contains(checkedTruncatedName)))
+                {
+                    Match match = Regex.Match(checkedTruncatedName, Regexs.TRUNCATED_NUMBER);
+                    string numberAsString;
+                    if (match.Success)
+                    {
+                        numberAsString = match.Groups[1].Value;
+                    }
+                    else
+                    {
+                        numberAsString = "0";
+                    }
+                    int i = Int16.Parse(numberAsString);
+
+                    if (i > 0)
+                    {
+                        checkedTruncatedName = checkedTruncatedName.Replace("~" + i, "~" + (i + 1));
+                    }
+                    else
+                    {
+                        checkedTruncatedName = checkedTruncatedName.Substring(0, Math.Min(6, checkedTruncatedName.Length)) + "~1";
+                    }
+                }
+            }
+
+            return checkedTruncatedName;
+        }
+
+        // Loops through JUST the Suggestions List for EACH Game
+        public static List<string> CheckSuggestionsForFileSystemDuplicates(string basePath, string year, string extractPath, string currentName, List<string> suggestions)
+        {
+            // Check for duplicate name/s within the file system, for each suggestion
+            // And remove these as a suggestion                                
+            // We are going to make the assumption, to be on the safe side,
+            // The if either a zip file or a folder with the same name still exists then this needs to be checked against the proposed name
+            // Hence getting either of these and removing duplicates
+            // As the user may have kept the zip as well as the folder.
+
+            // If the yearly extract folder doesn't exist, there are no file system duplciates
+            if (!Directory.Exists(basePath + "\\" + year + "\\"))
+            {
+                return suggestions;
+            }
+
+            string currentSuggestion;
+            List<string> bannedNames = new List<string>(); // Keep a list of duplicates in case user acidently sets a custom name as this
+            List<string> newNames = new List<string>(); // Keep a list of duplicates in case user acidently sets a custom name as this
+
+            foreach (string suggestion in suggestions)
+            {
+                currentSuggestion = suggestion;
+
+                // If the full path of the current suggestion exists, we have to ban it
+                string fullPath = basePath + "\\" + extractPath.Replace(currentName, currentSuggestion);
+
+                int i = 2;
+                while (Directory.Exists(fullPath))
+                {
+                    int iLength = i.ToString().Length + 1; // +1 for ~
+                                                           // Truncate name for digit/s, exluding the current digit if it exists...
+                    string suggestionWithoutNumber = currentSuggestion.Replace("~" + (i - 1), "");
+                    if (suggestionWithoutNumber.Length + iLength > 8)
+                    {
+                        currentSuggestion = currentSuggestion.Substring(0, currentSuggestion.Length - (currentSuggestion.Length + iLength - 8));
+                    }
+                    // Remove preivous number (if any)
+                    currentSuggestion = currentSuggestion.Replace("~" + (i - 1).ToString(), "");
+
+                    currentSuggestion = currentSuggestion + "~" + i.ToString();
+
+                    fullPath = basePath + "\\" + extractPath.Replace(currentName, currentSuggestion);
+
+                    i = i + 1;
+                }
+
+                if (currentSuggestion != suggestion)
+                {
+                    bannedNames.Add(suggestion);
+                    newNames.Add(currentSuggestion);
+                }
+            }
+            return suggestions.Where(suggestion => !bannedNames.Contains(suggestion)).Concat(newNames).Distinct().ToList();
+
         }
     }
 }

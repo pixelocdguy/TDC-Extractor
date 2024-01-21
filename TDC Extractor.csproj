@@ -6,6 +6,15 @@
     <RootNamespace>TDC_Extractor</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\favicon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\favicon.ico" />
+  </ItemGroup>
+
+<ItemGroup>
+    <Resource Include="Assets/favicon.ico" />
+</ItemGroup>
 
 </Project>

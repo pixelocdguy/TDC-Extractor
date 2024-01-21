@@ -36,6 +36,7 @@ namespace TDC_Extractor
     {
         public ObservableCollection<Game> Games;
         public string ZipFileName;
+        public string Year;
 
         DispatcherTimer timer;
         int tick;
@@ -43,11 +44,14 @@ namespace TDC_Extractor
         public MainWindow()
         {
             InitializeComponent();
+
+            Title = "TDC Extractor v0.6";
             
             Games = new ObservableCollection<Game>();
             this.DataContext = Games;
 
             ZipFileName = "";
+            Year = "1980";
 
             timer = new DispatcherTimer();
             timer.Interval = new TimeSpan(0, 0, 0, 0, 500);
@@ -84,6 +88,8 @@ namespace TDC_Extractor
             {
                 // Open document                
                 ZipFileName = dialog.FileName;
+                // TO DO: Do this better. E.g, check the folder inside the zip.
+                Year = Path.GetFileNameWithoutExtension(ZipFileName);
                 ZipFileNameTextBlock.Text = ZipFileName;
 
                 loadZip();
@@ -97,10 +103,12 @@ namespace TDC_Extractor
             
             ShortNameCheckBox.IsChecked = false;
 
+            string year = Path.GetFileNameWithoutExtension(ZipFileName);
+
             List<string> gameFilenames = FileHelpers.LoadZip(ZipFileName);
             for (int i = 0; i < gameFilenames.Count; i++)
             {
-                Games.Add(new Game(i, gameFilenames[i]));
+                Games.Add(new Game(i, gameFilenames[i], year));
             }
 
             // Reset switches to the default, if 2nd zip file is opened
@@ -121,20 +129,14 @@ namespace TDC_Extractor
          */
         private void ExtractButton_Click(object sender, RoutedEventArgs e)
         {
-            string basePathW_Year = FileHelpers.GetFullPath(ZipFileName);
+            string basePath = FileHelpers.GetBasePath(ZipFileName) + "\\";
+            Directory.SetCurrentDirectory(basePath);
 
             // Open the yearly zip file
             using (ZipArchive archive = ZipFile.OpenRead(ZipFileName))
             {
                 int currentIndex = 0;
                 int total = archive.Entries.Count;
-
-                // Re-check for duplicates. If user has manually altered any entry, and it clashes, rename here
-                // TO DO: Need an additional check for subfolders varients.
-                if (SuggestRadioButton.IsChecked == true) //&& !GroupCheckBox.IsChecked == true)
-                {
-                    ShortNameHelpers.RenameShortNameDuplicates(Games.ToList(), true);
-                }                
 
                 // Process each child zip game
                 foreach (ZipArchiveEntry entry in archive.Entries)
@@ -152,28 +154,21 @@ namespace TDC_Extractor
                     {                    
                         // Extract the Inner Zip file (A ZIP of a single game)
                         // Using the naming chosen by the user
-                        // TO DO: Cleanup, move to helper
                         try
                         {
-                            //bool group = GroupCheckBox.IsChecked == true;
-                            // Not ready yet
-                            bool group = false;
-                            
-                            bool shortName = ShortNameCheckBox.IsChecked == true;
-                            bool alphabet = AlphabetCheckBox.IsChecked == true;
-
-                            string innerZipPath = FileHelpers.GetInnerZipPath(basePathW_Year, game, group, shortName, alphabet);
-
-                            // This creates the path for extraction or additional part if shortname folders were selected
-                            if (!Directory.Exists(innerZipPath))
+                            // Create the game name folder if it doesn't already exist
+                            if (!Directory.Exists(basePath + game.ExtractPath))
                             {
-                                Directory.CreateDirectory(innerZipPath);
+                                Directory.CreateDirectory(basePath + game.ExtractPath);
                             }
 
-                            Directory.SetCurrentDirectory(innerZipPath);
+                            // Extract the game zip to this folder
+                            Directory.SetCurrentDirectory(basePath + game.ExtractPath);
                             entry.ExtractToFile(game.CurrentName + Constants.ZIP);
 
-                            FileHelpers.ExtractInnerZip(innerZipPath, game.CurrentName);
+                            // Extract the zip contents to this folder
+                            FileHelpers.ExtractInnerZip(basePath + game.ExtractPath, game.CurrentName + Constants.ZIP);
+
 
                             if (DeleteZipsCheckBox.IsChecked == true)
                             {
@@ -204,6 +199,8 @@ namespace TDC_Extractor
                 game.Selected = true;
             }
 
+            // This deselected Disk Images
+            // TO DO: ISOs?
             if (ImagesCheckBox.IsChecked == false)
             {                
                 Games.ToList().ForEach(game => { if (game.FullName.EndsWith(".img", StringComparison.CurrentCultureIgnoreCase)) game.Selected = false; });
@@ -396,59 +393,71 @@ namespace TDC_Extractor
         {
             CheckBox checkBox = ShortNameCheckBox;
 
-            if (checkBox.IsChecked == true)
-            {
-                if (TruncateRadioButton.IsChecked == true)
-                {                    
-                    SuggestedNamesColumn.Visibility = Visibility.Collapsed;
+            if (TruncateRadioButton.IsChecked == true)
+            {                    
+                SuggestedNamesColumn.Visibility = Visibility.Collapsed;
                                         
-                    handleTruncateGameName();
+                handleTruncateGameName();
 
-                    updateCount_List();
-                }
-                else // if (SuggestRadioButton.IsChecked == true)
-                {
-                    handleSuggestedGameNames();
-                                        
-                    SuggestedNamesColumn.Visibility = Visibility.Visible;
-
-                    updateCount_List();
-                }             
+                updateCount_List();
             }
-            else
+            else if (SuggestRadioButton.IsChecked == true)
+            {
+                handleSuggestedGameNames();
+                                        
+                SuggestedNamesColumn.Visibility = Visibility.Visible;
+
+                updateCount_List();
+            }             
+                        
+            if (((FrameworkElement)sender).Name == "ShortNameCheckBox" && (checkBox.IsChecked != true)) // This is not needed if just switching between above radio buttons
             {
                 // Revert to full name
                 foreach (Game game in Games)
                 {
-                    game.CurrentName = game.FullName;
+                    game.ShortName = false;
+                    //game.CurrentName = game.FullName;
                 }
 
-                updateCount_List();
+                SuggestedNamesColumn.Visibility = Visibility.Collapsed;                
             }
+            // else do nothing
         }
 
         private void handleTruncateGameName()
         {
             // Get a list of files (in case zips weren't deleted) or folders already in the dir just in case there is a clash
-            string fullPath = FileHelpers.GetFullPath(ZipFileName);
-            string[] entries = Directory.GetFileSystemEntries(fullPath).Distinct().ToArray();
+            string basePath = FileHelpers.GetBasePath(ZipFileName);
 
             // Get the truncated names
-            foreach (Game game in Games)
+            for (int i = 0; i < Games.Count; i++)
             {
-                game.TruncatedName = FileHelpers.GetTruncatedName(game.FullName, entries);
+                Game game = Games[i];
 
-                game.SuggestedNames.Clear();
-                
-                game.CurrentName = game.TruncatedName;                
+                game.ShortName = true;
+                game.TruncatedName = ShortNameHelpers.GetTruncatedName(game.FullName);
+
+                //game.CurrentName = game.TruncatedName; //updates extract path
+                //game.SetExtractPath(game.TruncatedName);
+                //string extractPath = FileHelpers.GetInnerZipPath("TEMP", game);
+                game.TruncatedName = FileHelpers.CheckTruncatedNameForFileSystemDuplicates(basePath, game.ExtractPath, game.CurrentName, game.TruncatedName);
+                //TESTING
+                //game.CurrentName = game.TruncatedName;
+
+                //game.CurrentName = "TEMP"; // This saves passing another variable although it seems a bit hacky...
+                List<string> truncatedNameInList = new List<string>() { game.TruncatedName };
+                List<Game> gamesAsList = Games.ToList();
+                // This has to go after File System check, as the file system check itself can cause duplicates
+                // KNOWN BUG: If there is a gap in the tilda numbers, this could cause another file system clash
+                game.CurrentName = ShortNameHelpers.CheckShortNamesForDuplicates(game.CurrentName, game.ExtractPath, truncatedNameInList, gamesAsList).First();
             }
 
-            ShortNameHelpers.RenameShortNameDuplicates(Games.ToList(), false);
+            //ShortNameHelpers.RenameShortNameDuplicates(Games.ToList(), false);
         }
 
         private void handleSuggestedGameNames()
         {
-            string fullPath = FileHelpers.GetFullPath(ZipFileName);
+            string basePath = FileHelpers.GetBasePath(ZipFileName);
             // Add game varient to full path to prevent renaming of suggestion when it is contained with a game varient sub-folder
             // This takes into account suggestions where there is a different version of a game with the same name
             // VS a varient of a game which the user has chosen to be in a sub-folder
@@ -464,31 +473,31 @@ namespace TDC_Extractor
                 for (int i = 1; i < count; i++)
                 {
                     var entry = archive.Entries[i];
-                    // Get matching game entry for archive entry
+                    // Get matching game entry for archive entry. -1 as Games has already had folder entry at index 0 removed, whereas zip will have it
                     Game game = Games.Where(game => game.Index == i - 1).Single();
 
+                    game.ShortName = true;
+
                     // Suggestions, are a combination of executable file names, words from the game title, usually abbreviated, joined or concatenated in a number of ways
-                    List<string> suggestions = new List<string>();
+                    List<string> suggestions = ShortNameHelpers.GetSuggestions(entry, game.FullName);
 
-                    // Get EXE file names
-                    suggestions.AddRange(ShortNameHelpers.GetEXEFilenames(entry));
+                    //Move and/or rename duplicates that already exist within file system
+                    suggestions = FileHelpers.CheckSuggestionsForFileSystemDuplicates(basePath, Year, game.ExtractPath, game.CurrentName, suggestions);
 
-                    // Add the EXE File names to the Words generated from the Game Name. -1 as Games has already had folder entry at index 0 removed, whereas zip will have it
-                    suggestions = suggestions.Union(ShortNameHelpers.GetGameNameWords(game.FullName)).ToList();
+                    //game.CurrentName = "TEMP";
 
-                    // Remove and/or rename duplicates that already exist within file system
-                    suggestions = ShortNameHelpers.RenameFileSystemDuplicates(fullPath, suggestions);
+                    List<Game> gamesAsList = Games.ToList();
+                    ShortNameHelpers.CheckShortNamesForDuplicates(game.CurrentName, game.ExtractPath, suggestions, gamesAsList);
 
                     // Add suggestions to game object
                     game.SuggestedNames = new ObservableCollection<string>(suggestions);
 
                     game.CurrentName = suggestions.First();
 
-
                 }
             }
 
-            ShortNameHelpers.RenameShortNameDuplicates(Games.ToList(), true);                        
+            //ShortNameHelpers.RenameShortNameDuplicates(Games.ToList(), true);                        
         }
 
         private void SelectedCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
@@ -520,6 +529,81 @@ namespace TDC_Extractor
                 timer.Start();
 
                 return;
+            }
+        }
+
+        private void TruncateOrSuggestRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ShortNameCheckBox.IsChecked == true)
+            {
+                ShortNameCheckBox_Click(sender, e);
+            }
+        }
+
+        //private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        //{
+        //    var textBox = sender as TextBox;
+        //    if (textBox != null)
+        //    {
+        //        string text = textBox.Text;
+        //        if (text.Length == 0)
+        //        {
+        //            return;
+        //        }
+
+        //        Game game = (Game)textBox.DataContext;
+        //        if (game == null) { return; }
+
+        //        if (text != game.CurrentName)
+        //        {
+        //            game.Alphabet = AlphabetCheckBox.IsChecked == true;
+        //            game.Group = GroupCheckBox.IsChecked == true;
+        //            game.ShortName = ShortNameCheckBox.IsChecked == true;
+        //            game.SetExtractPath();
+        //        }
+        //    }        
+        //}
+
+        private void AlphabetCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            handleCheckedOrUnchecked(sender, e);
+        }
+
+        private void AlphabetCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            handleCheckedOrUnchecked(sender, e);
+        }
+
+        private void handleCheckedOrUnchecked(object sender, RoutedEventArgs e)
+        {
+            bool alphabet = AlphabetCheckBox.IsChecked == true;
+
+            foreach (Game game in Games)
+            {
+                game.Alphabet = alphabet;
+                //game.SetExtractPath();
+            }
+        }
+
+        private void GroupCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            handleGroupCheckedOrUnchecked(sender, e);
+        }
+
+        private void GroupCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            handleGroupCheckedOrUnchecked(sender, e);
+        }
+
+        private void handleGroupCheckedOrUnchecked(object sender, RoutedEventArgs e)
+        {
+            bool group = GroupCheckBox.IsChecked == true;
+
+            foreach (Game game in Games)
+            {
+                game.Group = group;
+
+                //game.SetExtractPath();
             }
         }
     }

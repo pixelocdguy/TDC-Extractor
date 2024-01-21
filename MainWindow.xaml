@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
+        Icon="/Assets/favicon.ico"
         Title="MainWindow" Height="768" Width="1366">
 
     <Grid Margin="16">
@@ -126,7 +127,7 @@
             <TextBox x:Name="SearchTextBox" Width="512"  IsEnabled="{Binding IsChecked, ElementName=FreeTextCheckBox}" KeyUp="TextBox_KeyUp" />
         </StackPanel>
 
-        <DataGrid Grid.Row="3"  Margin="0,12,0,0" x:Name="GamesDataGrid" SelectionUnit="Cell" ItemsSource="{Binding}" Grid.Column="2" HorizontalScrollBarVisibility="Disabled" AutoGenerateColumns="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+        <DataGrid Grid.Row="3"  Margin="0,12,0,0" x:Name="GamesDataGrid" SelectionMode="Single" SelectionUnit="Cell" ItemsSource="{Binding}" Grid.Column="2" HorizontalScrollBarVisibility="Disabled" AutoGenerateColumns="False" AlternatingRowBackground="LightGray" AlternationCount="2">
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
                     <Style.Triggers>
@@ -148,8 +149,16 @@
                         </Style>
                     </DataGridCheckBoxColumn.ElementStyle>
                 </DataGridCheckBoxColumn>
+                <DataGridTextColumn Width="Auto" Header="Idx" IsReadOnly="True" Binding="{Binding Index}"/>
                 <DataGridTextColumn Width="Auto" Header="Full Name" IsReadOnly="True" Binding="{Binding FullName}"/>
                 <DataGridTextColumn Width="Auto" Header="Current Name"  Binding="{Binding CurrentName, Mode=TwoWay}"/>
+                <!--<DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <EventSetter Event="TextChanged" Handler="TextBox_TextChanged"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>-->
+                <DataGridTextColumn Width="Auto" Header="Extract Path" IsReadOnly="True" Binding="{Binding ExtractPath, Mode=OneWay}"/>
                 <DataGridComboBoxColumn Width="Auto" x:Name="SuggestedNamesColumn" Header="Suggested Names"  Visibility="Collapsed"
                                         SelectedItemBinding="{Binding CurrentName}">
                     <DataGridComboBoxColumn.ElementStyle>
@@ -179,14 +188,14 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <TextBlock Text="Options: " FontWeight="Bold"/>
                 <CheckBox Margin="8,0,0,0" x:Name="ShortNameCheckBox" IsChecked="False" Content="8.3 Format" Click="ShortNameCheckBox_Click" />
-                <RadioButton Margin="8,0,0,0" x:Name="TruncateRadioButton" Content="Truncate" IsChecked="True" IsEnabled="{Binding IsChecked, ElementName=ShortNameCheckBox}" Click="ShortNameCheckBox_Click"/>
-                <RadioButton Margin="4,0,0,0" x:Name="SuggestRadioButton" Content="Suggest" IsChecked="False" IsEnabled="{Binding IsChecked, ElementName=ShortNameCheckBox}" Click="ShortNameCheckBox_Click"/>
+                <RadioButton Margin="8,0,0,0" x:Name="TruncateRadioButton" Content="Truncate" IsChecked="True" Checked="TruncateOrSuggestRadioButton_Checked" />
+                <RadioButton Margin="4,0,0,0" x:Name="SuggestRadioButton" Content="Suggest" IsChecked="False" Checked="TruncateOrSuggestRadioButton_Checked" />
                 <TextBlock Margin="8,0,8,0" Text="|"/>
-                <CheckBox x:Name="AlphabetCheckBox" Content="Alphabet sub-folders" IsChecked="True"/>
+                <CheckBox x:Name="AlphabetCheckBox" Content="Alphabet sub-folders" IsChecked="False" Checked="AlphabetCheckBox_Checked" Unchecked="AlphabetCheckBox_Unchecked" />
                 <!--<CheckBox Margin="4,0,0,0"  x:Name="PublisherFolderCheckBox" Content="Publisher sub-folders" IsChecked="False"/>-->                                
                 <TextBlock Margin="8,0,8,0" Text="|"/>
-                <!--<CheckBox Margin="4,0,0,0" x:Name="GroupCheckBox" Content="Group Varients" IsChecked="False"/>
-                <TextBlock Margin="8,0,8,0" Text="|"/>-->
+                <CheckBox Margin="4,0,0,0" x:Name="GroupCheckBox" Content="Group Varients" IsChecked="False" Checked="GroupCheckBox_Checked" Unchecked="GroupCheckBox_Unchecked"/>
+                <TextBlock Margin="8,0,8,0" Text="|"/>
                 <CheckBox x:Name="DeleteZipsCheckBox" Content="Delete inner-zip after game extracted" IsChecked="True"/>
 
                 <Separator Margin="0,4,0,4" />

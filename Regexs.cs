@@ -79,7 +79,7 @@ namespace TDC_Extractor
         // This includes: Version, Flags, Languages, Tags
         public const string VARIENT_META = @"(v[0-9.]+|r\d+)|(\([^\)]*\))|(\[[^\]]*\])|(\[\.\])|(\[\!\])";
         // Regex to remove brackets and . (dot) from above metadata match
-        public const string SHORT_META = @"[\[\]\(\)]|\.0+";
+        public const string SHORT_META = @"[\[\]\(\)]|\.0+|\.";
 
         public const string YEAR = @"\((198\d|199\d|20[0-9]\d)\)";
     }

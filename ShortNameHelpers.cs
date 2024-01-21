@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -12,11 +13,44 @@ namespace TDC_Extractor
 {
     public static class ShortNameHelpers
     {
+        public static string GetTruncatedName(string gameName)
+        {
+            // Get just the game title minus metadata
+            gameName = Regex.Match(gameName, Regexs.NAME_W_O_META).Value.Trim();
+
+            // Remove unwanted punctuation / symbols
+            gameName = Regex.Replace(gameName, Regexs.EXCLUDED_SYMBOLS, "");
+
+            // Convert to upper case
+            gameName = gameName.ToUpper();
+
+            // If game name is greater than 8 chars, truncate now, otherwise, use as is
+            if (gameName.Length > 8)
+            {
+                gameName = gameName.Substring(0, 6) + "~1";
+            }
+
+            return gameName;
+        }
+
+        public static List<string> GetSuggestions(ZipArchiveEntry entry, string fullName)
+        {
+            List<string> suggestions = new List<string>();
+
+            // Get EXE file names
+            suggestions.AddRange(getEXEFilenames(entry));
+
+            // Add the Words generated from the Game Name to EXE File names.
+            suggestions = suggestions.Union(getGameNameWords(fullName)).ToList();
+
+            return suggestions;
+        }
+
         /*
          * Get's all executable (bat, exe, com) file names from a Zip Archive Entry,
          * excluding those that clearly aren't the name of a game, e.g. install, setup, run, start, etc...
          */
-        public static List<string> GetEXEFilenames(ZipArchiveEntry entry)
+        private static List<string> getEXEFilenames(ZipArchiveEntry entry)
         {
             List<string> exeFilenames = new List<string>();
 
@@ -35,7 +69,7 @@ namespace TDC_Extractor
                         }
 
                         string extension = Path.GetExtension(gameFile.Name);
-                        if (extension.Equals(".bat", StringComparison.CurrentCultureIgnoreCase) || extension.Equals(".com", StringComparison.CurrentCultureIgnoreCase) || extension.Equals(".exe", StringComparison.CurrentCultureIgnoreCase) || extension.Equals(".bas", StringComparison.CurrentCultureIgnoreCase) || extension.Equals(".img", StringComparison.CurrentCultureIgnoreCase) || extension.Equals(".txt", StringComparison.CurrentCultureIgnoreCase) || extension.Equals(".doc", StringComparison.CurrentCultureIgnoreCase))
+                        if (Constants.EXECUTABLES.Contains(extension, StringComparer.CurrentCultureIgnoreCase))
                         {
                             string exeFile = Path.GetFileNameWithoutExtension(gameFile.Name);
 
@@ -50,8 +84,15 @@ namespace TDC_Extractor
                                 }
                             }
 
-                            if (!excluded)
+                            // We do not want single character exe's because it's too ambigous
+                            if (!excluded && exeFile.Length > 1)
                             {
+                                // Some files start with an _ for some reason, this is unwanted, remove it
+                                if (exeFile.First() == '_')
+                                {
+                                    exeFile = exeFile.Remove(0, 1);
+                                }
+
                                 // The vast majority of file names are uppercase, so to be consistant for those that aren't this is done here
                                 exeFilenames.Add(exeFile.ToUpper());
                             }
@@ -66,8 +107,8 @@ namespace TDC_Extractor
         /*
          * Gets a number of suggestions based on the words in the game name
          */
-        public static List<string> GetGameNameWords(string gameName)
-        {            
+        private static List<string> getGameNameWords(string gameName)
+        {
             // Game Name Words!
             // This was added after EXE files, as, sometimes these are named poorly, or named dumb things like "start" which could apply to multiple Games
             // And thus could have no matches at all
@@ -172,108 +213,145 @@ namespace TDC_Extractor
             return initials;
         }
 
-        public static List<string> RenameFileSystemDuplicates(string path, List<string> suggestions)
+        /*
+         * Rewrite of the below so that it can be checked during the original creation of the truncated name/suggestions
+         * So that it can be done BEFORE the duplicate file name check
+         * Otherwise, it may end up renaming the files to a file system clash
+         */
+        public static List<string> CheckShortNamesForDuplicates(string currentName, string extractPath, List<string> suggestions, List<Game> games)        
         {
-            // Check for duplicate name/s within the file system, for each suggestion
-            // And remove these as a suggestion                                
-            // We are going to make the assumption, to be on the safe side,
-            // The if either a zip file or a folder with the same name still exists then this needs to be checked against the proposed name
-            // Hence getting either of these and removing duplicates
-            // As the user may have kept the zip as well as the folder.
-            List<string> entries = Directory.GetFileSystemEntries(path).ToList();
-            
-            // Remove file name extensions, if present
-            // And select only distinct entries (as the zip file and folder may both be present
-            entries = entries.Select(entry => Path.GetFileNameWithoutExtension(entry)).Distinct().ToList();
+            Dictionary<string, string> replacements = new Dictionary<string, string>();
 
-            string currentSuggestion;
-            List<string> bannedNames = new List<string>(); // Keep a list of duplicates in case user acidently sets a custom name as this
-            List<string> newNames = new List<string>(); // Keep a list of duplicates in case user acidently sets a custom name as this
-
-            foreach (string suggestion in suggestions)
+            foreach (string shortName in suggestions)
             {
-                currentSuggestion = suggestion;
-
-                int i = 2;
-                while (entries.Any(entry => entry.Equals(currentSuggestion, StringComparison.CurrentCultureIgnoreCase)))
+                string shortExtractPath = extractPath.Replace(currentName, shortName);
+                                
+                if (games.Any(game => game.ExtractPath == shortExtractPath))
                 {
-                    int iLength = i.ToString().Length + 1; // +1 for ~
-                    // Truncate name for digit/s, exluding the current digit if it exists...
-                    string suggestionWithoutNumber = currentSuggestion.Replace("~" + (i - 1), "");
-                    if (suggestionWithoutNumber.Length + iLength > 8)
-                    {
-                        currentSuggestion = currentSuggestion.Substring(0, currentSuggestion.Length - (currentSuggestion.Length + iLength - 8));
+                    // Move the current suggestion to last if there is more than 1 available
+                    if (suggestions.Count > 1)
+                    {   
+                        replacements.Add(shortName, "");
                     }
-                    // Remove preivous number (if any)
-                    currentSuggestion = currentSuggestion.Replace("~" + (i - 1).ToString(), "");
-
-                    currentSuggestion = currentSuggestion + "~" + i.ToString();
-
-                    i = i + 1;
-                }
-
-                if (currentSuggestion != suggestion)
-                {
-                    bannedNames.Add(suggestion);
-                    newNames.Add(currentSuggestion);
-                }
-            }
-            return suggestions.Where(suggestion => !bannedNames.Contains(suggestion)).Concat(newNames).ToList();            
-        }
-
-        // TO DO: Combine with the above. Only difference is above compares file system while this compares other Games
-        // TO DO: Need an additional check for subfolders varients.
-        public static void RenameShortNameDuplicates(List<Game> Games, bool suggest)
-        {
-            // Suggest flag makes sure truncate doesn't search for replacements in the SuggestedNames List in the game object.
-
-            Dictionary<string, int> nameCount = new Dictionary<string, int>();
-
-            for (int i = 0; i < Games.Count; i++)
-            {
-                string originalName = Games[i].CurrentName;
-                string baseName = originalName;
-                int count = 0;
-
-                int tildeIndex = originalName.LastIndexOf("~");
-                if (tildeIndex >= 0)
-                {
-                    baseName = originalName.Substring(0, tildeIndex);
-                    if (int.TryParse(originalName.Substring(tildeIndex + 1), out int parsedCount))
+                    else // As this is the final suggestion, rename it
                     {
-                        count = parsedCount;
-                    }
-                }
+                        string oldShortExtractPath = shortExtractPath;
+                        string newShortExtractPath = shortExtractPath;
+                        string newShortName = shortName;
+                        
+                        while (games.Any(game => game.ExtractPath == newShortExtractPath))
+                        {
+                            Match match = Regex.Match(newShortName, Regexs.TRUNCATED_NUMBER);
+                            string numberAsString;
+                            if (match.Success)
+                            {
+                                numberAsString = match.Groups[1].Value;
+                            }
+                            else
+                            {
+                                numberAsString = "0";
+                            }
+                            int i = Int16.Parse(numberAsString);
 
-                string newName = originalName;
-                while (nameCount.ContainsKey(newName))
-                {
-                    count++;
-                    newName = $"{baseName}~{count}";
+                            if (i > 0)
+                            {
+                                newShortName = newShortName.Replace("~" + i, "~" + (i + 1));
+                            }
+                            else
+                            {
+                                newShortName = newShortName.Substring(0, Math.Min(6, shortName.Length)) + "~1";
+                            }
 
-                    if (newName.Length > 8)
-                    {
-                        baseName = baseName.Substring(0, 7 - count.ToString().Length);
-                        newName = $"{baseName}~{count}";
-                    }
-                }
+                            newShortExtractPath = oldShortExtractPath.Replace(shortName, newShortName);
+                        }
 
-                nameCount[newName] = 1;
-                Games[i].CurrentName = newName;
-                
-                // This is meant to replace the renamed file in the suggestions list to prevent the user selecting a duplicate
-                // As we're now adding the truncated name to the suggested names box... remove if statement
-                if (suggest && Games[i].SuggestedNames.Count > 0)
-                {
-                    List<string> suggestionsList = new List<string>(Games[i].SuggestedNames);
-                    int index = suggestionsList.FindIndex(name => name == originalName);
-                    if (index != -1)
-                    {
-                        Games[i].SuggestedNames[index] = newName;
+                        replacements.Add(shortName, newShortName);
                     }
                 }
             }
 
+            foreach (KeyValuePair<string, string> pair in replacements)
+            {
+                suggestions.Remove(pair.Key);
+
+                if (pair.Value != "")
+                {
+                    suggestions.Insert(0, pair.Value);
+                }
+                else
+                {
+                    suggestions.Add(pair.Key);
+                }
+            }
+
+            return suggestions;
         }
+
+        // Loops through JUST the Games List
+        //public static void RenameShortNameDuplicates(List<Game> Games, bool suggest)
+        //{
+        //    // Suggest flag makes sure truncate doesn't search for replacements in the SuggestedNames List in the game object.
+        //    // So instead of using the next number, we use an alternative name
+
+        //    Dictionary<string, int> pathCount = new Dictionary<string, int>();
+
+        //    for (int i = 0; i < Games.Count; i++)
+        //    {
+        //        string originalName = Games[i].CurrentName;
+        //        string originalPath = Games[i].ExtractPath;
+        //        if (originalPath == null)
+        //        {
+        //            Debug.WriteLine("Extract path is null! This method needs to be called after this is set.");
+        //            return;
+        //        }
+        //        // Remove trailing backslash as this is not needed to compare unique names and casues the parse of the int to fail below
+        //        originalPath = originalPath.Substring(0, originalPath.Length - 1);
+
+        //        string baseName = originalName;
+        //        int count = 0;
+
+        //        int tildeIndex = originalName.LastIndexOf("~");
+        //        if (tildeIndex >= 0)
+        //        {
+        //            baseName = originalName.Substring(0, tildeIndex);
+        //            if (int.TryParse(originalName.Substring(tildeIndex + 1), out int parsedCount))
+        //            {
+        //                count = parsedCount;
+        //            }
+        //        }
+
+        //        string newName = originalName;
+        //        string newPath = originalPath;
+        //        while (pathCount.ContainsKey(newPath))
+        //        {
+        //            count++;
+
+        //            newName = $"{baseName}~{count}";
+        //            if (newName.Length > 8)
+        //            {
+        //                baseName = baseName.Substring(0, 7 - count.ToString().Length);
+        //                newName = $"{baseName}~{count}";
+        //            }
+
+        //            newPath = originalPath.Replace(originalName, newName);
+        //        }
+
+        //        pathCount[newPath] = 1;
+        //        Games[i].CurrentName = newName;
+
+        //        // TO DO: Is this working?
+        //        // This is meant to replace the renamed file in the suggestions list to prevent the user selecting a duplicate
+        //        // As we're now adding the truncated name to the suggested names box... remove if statement
+        //        if (suggest && Games[i].SuggestedNames.Count > 0)
+        //        {
+        //            List<string> suggestionsList = new List<string>(Games[i].SuggestedNames);
+        //            int index = suggestionsList.FindIndex(name => name == originalName);
+        //            if (index != -1)
+        //            {
+        //                Games[i].SuggestedNames[index] = newName;
+        //            }
+        //        }
+        //    }
+        //}
     }
 }
